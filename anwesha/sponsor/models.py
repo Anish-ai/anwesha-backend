@@ -1,4 +1,37 @@
 from django.db import models
+from user.models import User
+
+
+class MyntraRegistration(models.Model):
+    """
+    Tracks users who registered via Myntra sponsor form.
+    Synced from Google Sheets periodically.
+    """
+    anwesha_user_id = models.CharField(max_length=10, blank=True, null=True, db_index=True)
+    email = models.EmailField(unique=True)
+    registered_at = models.DateTimeField(auto_now_add=True)
+    last_synced = models.DateTimeField(auto_now=True)
+    
+    # Store raw data from sheet if needed
+    raw_data = models.JSONField(default=dict, blank=True)
+    
+    class Meta:
+        verbose_name = "Myntra Registration"
+        verbose_name_plural = "Myntra Registrations"
+    
+    @property
+    def anwesha_user(self):
+        """Get the related User object"""
+        if self.anwesha_user_id:
+            try:
+                return User.objects.get(anwesha_id=self.anwesha_user_id)
+            except User.DoesNotExist:
+                return None
+        return None
+    
+    def __str__(self):
+        return f"{self.email} - {self.anwesha_user_id or 'No User'}"
+
 
 # Sponsors Model Definition
 class Sponsors(models.Model):

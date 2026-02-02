@@ -67,4 +67,6 @@ gunicorn==21.2.0
 Pillow==9.5.0
 pycryptodome==3.18.0
 setuptools==67.8.0
+
 whitenoise==6.6.0
+gspread==5.7.2

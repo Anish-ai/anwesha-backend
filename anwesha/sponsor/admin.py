@@ -1,6 +1,35 @@
 from django.contrib import admin
-from .models import Sponsors
+from .models import Sponsors, MyntraRegistration
 from utility import export_as_csv
+from django.utils.html import format_html
+from django.urls import reverse
+from django.db import connection
+
+
+@admin.register(MyntraRegistration)
+class MyntraRegistrationAdmin(admin.ModelAdmin):
+    """
+    Admin configuration for Myntra Registrations.
+    """
+    list_display = ('email', 'anwesha_user_id', 'registered_at', 'user_link')
+    search_fields = ('email', 'anwesha_user_id')
+    readonly_fields = ('registered_at', 'last_synced', 'raw_data')
+    list_filter = ('registered_at', 'last_synced')
+    actions = ['manual_sync']
+    
+    def user_link(self, obj):
+        """Display link to User if exists"""
+        if obj.anwesha_user:
+            user = obj.anwesha_user
+            url = reverse('admin:user_user_change', args=[user.pk])
+            return format_html('<a href="{}">{}</a>', url, user.anwesha_id)
+        return "No User"
+    user_link.short_description = "User"
+    
+    def manual_sync(self, request, queryset):
+        """Manual sync action - sync_myntra management command does this"""
+        self.message_user(request, "Use 'python manage.py sync_myntra' to sync from Google Sheets")
+    manual_sync.short_description = "Sync selected from Google Sheets"
 
 @admin.register(Sponsors)
 class SponsorsAdmin(admin.ModelAdmin):
