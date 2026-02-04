@@ -333,12 +333,25 @@ LOGIN_REDIRECT_URL = 'http://backend.anwesha.live/user/oauth/'
 LOGOUT_REDIRECT_URL = 'https://anwesha.shop/admin/'
 
 # Mail configuration
-EMAIL_BACKEND = 'anwesha.backends.CustomEmailBackend'
-EMAIL_USE_TLS = True
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_HOST_USER = env('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+# Always define these for backward compatibility with utility.py imports
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='anweshatroubleshoot@gmail.com')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+
+# Using SendGrid for reliable email delivery
+EMAIL_BACKEND = 'sendgrid_backend.SendgridBackend'
+SENDGRID_API_KEY = env('SENDGRID_API_KEY', default='')
+SENDGRID_SANDBOX_MODE_IN_DEBUG = False
+
+# Always define these for SendGrid
+DEFAULT_FROM_EMAIL = 'noreply@anwesha.shop'
+SERVER_EMAIL = 'noreply@anwesha.shop'
+
+# Fallback to Gmail if SendGrid not configured
+if not SENDGRID_API_KEY:
+    EMAIL_BACKEND = 'anwesha.backends.CustomEmailBackend'
+    EMAIL_USE_TLS = True
+    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_PORT = 587
 
 #razorpay api keys
 RAZORPAY_API_KEY_ID = ""#env("RAZORPAY_API_KEY_ID")

@@ -31,7 +31,12 @@ class EmailThread(threading.Thread):
         threading.Thread.__init__(self)
     
     def run(self):
-        self.email.send(fail_silently=False) 
+        try:
+            self.email.send(fail_silently=False)
+        except Exception as e:
+            print(f"Email sending failed: {str(e)}")
+            import traceback
+            traceback.print_exc() 
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -355,8 +360,13 @@ class Register(APIView):
         
         text = mail_content(type=1, email_id=email_id, full_name=full_name, anwesha_id=new_user.anwesha_id)
         
-        from anwesha.email_rotation import EmailThreadRotated
-        EmailThreadRotated(email_id, "No reply", text).start()
+        email = EmailMessage(
+            subject="No reply",
+            body=text,
+            from_email='noreply@anwesha.shop',
+            to=[email_id],
+        )
+        EmailThread(email).start()
         #send_email_using_microservice(
         #    email_id=email_id,
         #    subject="No reply",
@@ -555,8 +565,13 @@ class ForgetPassword(APIView):
             text = f'''Hello {user.full_name}!\nThis is the link to change your password. Click on it to update your password:\n{link}\nPS: Please don't share it with anyone.\nThanks,\nTeam Anwesha'''
             
 
-            from anwesha.email_rotation import EmailThreadRotated
-            EmailThreadRotated(user.email_id, "Reset Password - Anwesha", text).start()
+            email = EmailMessage(
+                subject="Reset Password - Anwesha",
+                body=text,
+                from_email='noreply@anwesha.shop',
+                to=[user.email_id],
+            )
+            EmailThread(email).start()
             # Send the email with the reset password link
             #send_email_using_microservice(email_id=request.data['email'], subject="Change password", text=text)
 

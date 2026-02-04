@@ -68,5 +68,8 @@ Pillow==9.5.0
 pycryptodome==3.18.0
 setuptools==67.8.0
 
+
 whitenoise==6.6.0
 gspread==5.7.2
+sendgrid==6.10.0
+django-sendgrid-v5==1.2.2

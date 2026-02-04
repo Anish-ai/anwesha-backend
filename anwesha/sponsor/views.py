@@ -4,7 +4,7 @@ from django.views import View
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.status import HTTP_401_UNAUTHORIZED, HTTP_404_NOT_FOUND, HTTP_200_OK
-from cryptography.fernet import Fernet
+import jwt
 import json
 from django.conf import settings
 from user.models import User
@@ -31,22 +31,33 @@ class MyntraStatus(APIView):
     def get(self, request):
         """Check if user is registered in Myntra sheet"""
         try:
-            # Get JWT token from cookies
-            token = request.COOKIES.get('jwt_token')
+            # Get JWT token from Authorization header (Bearer token) or cookies
+            auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+            
+            if auth_header.startswith('Bearer '):
+                # Extract Bearer token
+                token = auth_header.replace('Bearer ', '')
+            else:
+                # Fallback to cookie-based JWT
+                token = request.COOKIES.get('jwt_token')
+            
             if not token:
                 return Response(
-                    {"detail": "No token provided"},
+                    {"detail": "No token provided. Use Authorization: Bearer <token> header or jwt_token cookie"},
                     status=HTTP_401_UNAUTHORIZED
                 )
             
-            # Decrypt token using COOKIE_ENCRYPTION_SECRET
-            cipher = Fernet(settings.COOKIE_ENCRYPTION_SECRET.encode() if isinstance(settings.COOKIE_ENCRYPTION_SECRET, str) else settings.COOKIE_ENCRYPTION_SECRET)
+            # Decode JWT token using COOKIE_ENCRYPTION_SECRET (HS256)
             try:
-                decrypted = cipher.decrypt(token.encode() if isinstance(token, str) else token)
-                payload = json.loads(decrypted.decode())
-            except Exception as e:
+                payload = jwt.decode(token, settings.COOKIE_ENCRYPTION_SECRET, algorithms=['HS256'])
+            except jwt.ExpiredSignatureError:
                 return Response(
-                    {"detail": "Invalid token"},
+                    {"detail": "Token has expired"},
+                    status=HTTP_401_UNAUTHORIZED
+                )
+            except jwt.InvalidTokenError as e:
+                return Response(
+                    {"detail": f"Invalid token: {str(e)}"},
                     status=HTTP_401_UNAUTHORIZED
                 )
             
